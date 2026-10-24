@@ -6,16 +6,14 @@
       </router-link>
     </div>
     <nav class="nav-links">
-      <router-link to="/" class="active">Início</router-link>
-      <router-link to="/catalogo">Catalogo</router-link>
-      <router-link to="/livrosalvos">Seus livros</router-link>
+      <router-link to="/">Início</router-link>
+      <router-link to="/catalogo">Catálogo</router-link>
+      <router-link to="/estante">Seus livros</router-link>
+      <router-link to="/social">Amigos</router-link>
       <router-link to="/login">Conta</router-link>
     </nav>
     <button class="theme-toggle" @click="toggleTheme" title="Mudar tema">
-      <img 
-        :src="isDarkMode ? sunIcon : moonIcon" 
-        alt="Ícone de Tema" 
-        class="theme-icon"/>
+      <img :src="isDarkMode ? sunIcon : moonIcon" alt="Ícone de Tema" class="theme-icon"/>
     </button>
   </header>
 </template>
@@ -24,15 +22,19 @@
 import { ref, onMounted } from 'vue'
 import sunIcon from '../assets/sunIcon.png'
 import moonIcon from '../assets/moonIcon.png'
+
 const isDarkMode = ref(true)
+
 const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value
   document.documentElement.setAttribute('data-theme', isDarkMode.value ? 'dark' : 'light')
 }
+
 onMounted(() => {
   document.documentElement.setAttribute('data-theme', isDarkMode.value ? 'dark' : 'light')
 })
 </script>
+
 <style scoped>
 .navbar {
   display: flex;
@@ -60,7 +62,7 @@ onMounted(() => {
 .nav-links a:hover {
   color: var(--brand-hover);
 }
-.nav-links a.active {
+.nav-links a.router-link-exact-active {
   color: var(--text-primary);
   border-bottom: 2px solid var(--brand-primary);
 }
