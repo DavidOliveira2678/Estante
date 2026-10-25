@@ -1,29 +1,3 @@
-<script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { useLivroStore } from '../stores/livroStore'
-import StatusLeitura from '../components/StatusLeitura.vue'
-import ResenhaForm from '../components/ResenhaForm.vue'
-import ResenhaLista from '../components/ResenhaLista.vue'
-
-const route = useRoute()
-const livroStore = useLivroStore()
-const idDaUrl = Number(route.params.id)
-const livroAtual = computed(() => {
-  const livroEncontrado = livroStore.getLivroById(idDaUrl)
-  return livroEncontrado || {
-    titulo: 'Livro não encontrado', 
-    autor: 'Desconhecido', 
-    sinopse: 'Não conseguimos localizar este livro no catálogo.', 
-    capa: 'https://via.placeholder.com/150x220/2a2a2a/ffffff?text=Erro'
-  }
-})
-const resenhasDoLivro = computed(() => [])
-const adicionarResenha = (novaResenha) => {
-  console.log("Resenha adicionada:", novaResenha)
-}
-</script>
-
 <template>
   <div class="page-container">
     <div class="book-header">
@@ -59,6 +33,53 @@ const adicionarResenha = (novaResenha) => {
     </div>
   </div>
 </template>
+
+<script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useLivroStore } from '../stores/livroStore'
+import { useReviewStore } from '../stores/resenhaStore'
+import { useSocialStore } from '../stores/socialStore'
+import StatusLeitura from '../components/StatusLeitura.vue'
+import ResenhaForm from '../components/ResenhaForm.vue'
+import ResenhaLista from '../components/ResenhaLista.vue'
+
+const route = useRoute()
+const livroStore = useLivroStore()
+const reviewStore = useReviewStore()
+const socialStore = useSocialStore()
+const idDaUrl = Number(route.params.id)
+const livroAtual = computed(() => {
+  const livroEncontrado = livroStore.getLivroById(idDaUrl)
+  return livroEncontrado || {
+    titulo: 'Livro não encontrado', 
+    autor: 'Desconhecido', 
+    sinopse: 'Não conseguimos localizar este livro no catálogo.', 
+    capa: 'https://via.placeholder.com/150x220/2a2a2a/ffffff?text=Erro'
+  }
+})
+const resenhasDoLivro = computed(() => {
+  return reviewStore.getReviewsByLivroId(idDaUrl).value
+})
+const adicionarResenha = (novaResenha) => {
+  const resenhaFormatada = {
+    ...novaResenha,
+    avatar: ''
+  }
+  reviewStore.addReview(idDaUrl, resenhaFormatada)
+  socialStore.addActivity({
+    id: Date.now(),
+    userName: novaResenha.user,
+    userAvatar: '',
+    action: 'escreveu uma resenha para',
+    bookTitle: livroAtual.value.titulo,
+    bookCover: livroAtual.value.capa,
+    rating: novaResenha.rating,
+    review: novaResenha.text,
+    date: 'Agora mesmo'
+  })
+}
+</script>
 
 <style scoped>
 .page-container {
@@ -108,7 +129,7 @@ const adicionarResenha = (novaResenha) => {
 .divider {
   margin: 3rem 0;
   border: 0;
-  border-top: 1px solid var(--border-color, #333);
+  border-top: 1px solid var(--border-color);
 }
 .resenhas-section {
   display: flex;

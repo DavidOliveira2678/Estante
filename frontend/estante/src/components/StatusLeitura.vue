@@ -1,10 +1,6 @@
 <template>
-  <select 
-    class="status-select" 
-    :value="statusAtual" 
-    @change="mudarStatus"
-  >
-    <option value="nenhum">Adicionar à estante...</option>
+  <select class="status-select" v-model="statusSelecionado">
+    <option value="nenhum">Nenhum</option>
     <option value="lendo">Lendo</option>
     <option value="quero_ler">Quero Ler</option>
     <option value="lido">Lido</option>
@@ -22,61 +18,32 @@ const props = defineProps({
   }
 })
 const livroStore = useLivroStore()
-const statusAtual = computed(() => {
-  if (!props.livroId) return 'nenhum'
-  return livroStore.getStatusLivro(props.livroId)
+const statusSelecionado = computed({
+  get: () => livroStore.getStatusLivro(props.livroId),
+  set: (novoValor) => livroStore.atualizarStatus(props.livroId, novoValor)
 })
-const mudarStatus = (event) => {
-  const novoStatus = event.target.value
-  livroStore.atualizarStatus(props.livroId, novoStatus)
-}
 </script>
 
 <style scoped>
-.status-container {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.status-select {
   width: 100%;
-  margin-top: 8px;
+  padding: 0.6rem;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
-.status-badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 4px;
-  display: inline-block;
-  text-align: center;
-  text-transform: uppercase;
+.status-select:hover {
+  background-color: var(--brand-surface);
+  border-color: var(--brand-primary);
 }
-.badge-lendo {
-    background: rgba(63, 196, 63, 0.2);
-    color: #3fc43f;
-}
-.badge-quero {
-    background: rgba(255, 193, 7, 0.2);
-    color: #ffc107;
-}
-.badge-lido {
-    background: rgba(33, 150, 243, 0.2);
-    color: #2196f3;
-}
-.badge-abandonado {
-    background: rgba(244, 67, 54, 0.2);
-    color: #f44336;
-}
-.badge-hidden {
-    display: none;
-}
-.progress-bar-bg {
-  height: 4px;
-  background: #333;
-  border-radius: 2px;
-  overflow: hidden;
-}
-.progress-bar-fill {
-  height: 100%;
-  background: #3fc43f;
-  transition: width 0.3s ease;
+.status-select:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px var(--brand-surface);
 }
 </style>

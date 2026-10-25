@@ -3,16 +3,29 @@
     <header class="estante-header">
       <h2>Minha Estante</h2>
       <nav class="status-tabs">
-        <button class="active">Todos</button>
-        <button>Lendo</button>
-        <button>Quero Ler</button>
-        <button>Lidos</button>
+        <button 
+          :class="{ active: abaAtiva === 'todos' }" 
+          @click="abaAtiva = 'todos'">Todos</button>
+        <button 
+          :class="{ active: abaAtiva === 'lendo' }" 
+          @click="abaAtiva = 'lendo'">Lendo</button>
+        <button 
+          :class="{ active: abaAtiva === 'quero_ler' }" 
+          @click="abaAtiva = 'quero_ler'">Quero Ler</button>
+        <button 
+          :class="{ active: abaAtiva === 'lido' }" 
+          @click="abaAtiva = 'lido'">Lidos</button>
       </nav>
     </header>
 
     <div class="livros-grid">
+      <p v-if="livrosFiltrados.length === 0" class="empty-msg">
+        Nenhum livro encontrado nesta categoria.
+      </p>
+
       <LivroCard 
-        v-for="livro in mockMeusLivros" 
+        v-else
+        v-for="livro in livrosFiltrados" 
         :key="livro.id" 
         :livro="livro" 
       />
@@ -21,14 +34,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useLivroStore } from '../stores/livroStore'
 import LivroCard from '../components/LivroCard.vue'
 
-const mockMeusLivros = ref([
-  { id: 1, titulo: 'Clean Code', autor: 'Robert C. Martin', status: 'lendo', progresso: 45, capa: 'https://m.media-amazon.com/images/I/41xShlnTZTL._SY445_SX342_.jpg' },
-  { id: 5, titulo: 'Design Patterns', autor: 'GoF', status: 'quero_ler', capa: 'https://m.media-amazon.com/images/I/81gtKoapHFL._SY466_.jpg' },
-  { id: 3, titulo: 'Barba Ensopada de sangue', autor: 'Daniel Galera', status: 'nenhum', capa: 'https://m.media-amazon.com/images/I/51f7HBLjg5S._SY445_SX342_ML2_.jpg' },
-])
+const livroStore = useLivroStore()
+const abaAtiva = ref('todos')
+const meusLivros = computed(() => {
+  return livroStore.estante.map(item => {
+    const livroCompleto = livroStore.getLivroById(item.livroId)
+    return { ...livroCompleto, status: item.status }
+  }).filter(livro => livro.titulo !== undefined)
+})
+const livrosFiltrados = computed(() => {
+  if (abaAtiva.value === 'todos') {
+    return meusLivros.value
+  }
+  return meusLivros.value.filter(livro => livro.status === abaAtiva.value)
+})
 </script>
 
 <style scoped>
@@ -41,30 +64,32 @@ const mockMeusLivros = ref([
   margin-bottom: 2rem;
 }
 .estante-header h2 {
-  color: #fff;
+  color: var(--text-primary);
   margin: 0 0 1rem 0;
 }
 .status-tabs {
-  display: flex;
-  gap: 1rem;
-  border-bottom: 1px solid #333;
+  display: flex; gap: 1rem;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 1rem;
 }
 .status-tabs button {
-  background: none;
-  border: none;
-  color: #888;
-  font-size: 1rem;
-  cursor: pointer;
-  padding: 0.5rem 0;
+  background: none; border: none;
+  color: var(--text-secondary);
+  font-size: 1rem; cursor: pointer; padding: 0.5rem 0;
 }
 .status-tabs button.active, .status-tabs button:hover {
-  color: #3fc43f;
+  color: var(--brand-primary);
   font-weight: bold;
 }
 .livros-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 2rem;
+}
+.empty-msg {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  grid-column: 1 / -1;
+  margin-top: 2rem;
   }
 </style>

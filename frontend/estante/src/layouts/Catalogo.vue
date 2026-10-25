@@ -18,11 +18,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useLivroStore } from '../stores/livroStore'
 import LivroCard from '../components/LivroCard.vue'
 
 const livroStore = useLivroStore()
+const searchQuery = ref('')
 const livrosDisponiveis = computed(() => livroStore.catalogo)
 </script>
 
@@ -39,24 +40,27 @@ const livrosDisponiveis = computed(() => livroStore.catalogo)
   margin-bottom: 2rem;
 }
 .catalogo-header h2 {
-  color: #fff;
+  color: var(--text-primary);
   margin: 0;
 }
 .search-bar input {
   padding: 0.6rem 1rem;
   border-radius: 20px;
-  border: 1px solid #333;
-  background: #2a2a2a;
-  color: #fff;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   width: 300px;
+}
+.search-bar input::placeholder {
+  color: var(--text-muted);
 }
 .search-bar input:focus {
   outline: none;
-  border-color: #3fc43f;
+  border-color: var(--brand-primary);
 }
 .livros-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 2rem;
-}
+  }
 </style>
