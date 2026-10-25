@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-export const useBookStore = defineStore('bookStore', () => {
+export const useLivroStore = defineStore('bookStore', () => {
   const catalogo = ref([
     { id: 1, titulo: 'Clean Code', autor: 'Robert C. Martin', ano: 2008, paginas: 464, sinopse: 'Mesmo um código ruim pode funcionar...', capa: 'https://m.media-amazon.com/images/I/41xShlnTZTL._SY445_SX342_.jpg' },
     { id: 2, titulo: 'O Senhor dos Anéis', autor: 'J.R.R. Tolkien', ano: 1954, paginas: 1200, sinopse: 'Na Terra-média, o jovem Frodo...', capa: 'https://m.media-amazon.com/images/I/715e215DkSL._SY466_.jpg' },
