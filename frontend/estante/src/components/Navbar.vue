@@ -10,7 +10,9 @@
       <router-link to="/catalogo">Catálogo</router-link>
       <router-link to="/estante">Seus livros</router-link>
       <router-link to="/social">Amigos</router-link>
-      <router-link to="/login">Conta</router-link>
+      <router-link :to="autenticacaoStore.isAuthenticated ? '/perfil' : '/login'">
+        {{ autenticacaoStore.isAuthenticated ? 'Perfil' : 'Entrar' }}
+      </router-link>
     </nav>
     <button class="theme-toggle" @click="toggleTheme" title="Mudar tema">
       <img :src="isDarkMode ? sunIcon : moonIcon" alt="Ícone de Tema" class="theme-icon"/>
@@ -20,9 +22,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useAutenticacaoStore } from '../stores/autenticacaoStore'
 import sunIcon from '../assets/sunIcon.png'
 import moonIcon from '../assets/moonIcon.png'
 
+const autenticacaoStore = useAutenticacaoStore()
 const isDarkMode = ref(true)
 
 const toggleTheme = () => {

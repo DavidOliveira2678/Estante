@@ -36,6 +36,7 @@ const emit = defineEmits(['new-review'])
 const rating = ref(0)
 const hoverRating = ref(0)
 const reviewText = ref('')
+
 const submitReview = () => {
   emit('new-review', {
     id: Date.now(),
@@ -55,9 +56,7 @@ const submitReview = () => {
   gap: 5px;
 }
 .star-icon {
-  width: 28px;
-  height: 28px;
-  cursor: pointer;
+  width: 28px; height: 28px; cursor: pointer;
   filter: grayscale(100%) opacity(40%);
   transition: filter 0.2s ease, transform 0.1s;
 }
@@ -70,18 +69,19 @@ const submitReview = () => {
 textarea {
   width: 100%;
   margin-top: 15px;
-  padding: 10px;
+  padding: 12px;
   border-radius: 6px;
-}
-button {
-  margin-top: 10px;
-  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: vertical;
 }
 button {
   margin-top: 15px;
   padding: 0.8rem 1.5rem;
   background-color: var(--brand-primary);
-  color: #111;
+  color: #ffffff;
   font-weight: bold;
   border: none;
   border-radius: 6px;
@@ -97,16 +97,5 @@ button:disabled {
   color: var(--text-secondary);
   cursor: not-allowed;
   transform: none;
-}
-textarea {
-  width: 100%;
-  margin-top: 15px;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: inherit;
-  resize: vertical;
 }
 </style>
