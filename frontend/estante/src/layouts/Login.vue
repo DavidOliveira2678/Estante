@@ -16,12 +16,15 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { useAutenticacaoStore } from '../stores/autenticacaoStore'
 import LoginForm from '../components/LoginForm.vue'
 
 const router = useRouter()
+const autenticacaoStore = useAutenticacaoStore()
+
 const executeLogin = (credentials) => {
-  console.log('Enviando para API de Login:', credentials)
-  // se der sucesso: router.push('/home')
+  autenticacaoStore.login(credentials)
+  router.push('/perfil')
 }
 const goToCadastro = () => {
   router.push('/cadastro') 
