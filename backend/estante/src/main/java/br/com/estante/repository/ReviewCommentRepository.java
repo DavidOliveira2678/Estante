@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ReviewCommentRepository extends JpaRepository<ReviewComment, Long> {
     Page<ReviewComment> findByReviewId(Long reviewId, Pageable pageable);
+    void deleteByReviewId(Long reviewId);
 }
