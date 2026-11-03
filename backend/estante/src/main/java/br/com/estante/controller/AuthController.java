@@ -5,28 +5,25 @@ import br.com.estante.dto.LoginRequestDto;
 import br.com.estante.dto.RegisterRequestDto;
 import br.com.estante.service.AuthService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
 
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
-
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequestDto request) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public void register(@Valid @RequestBody RegisterRequestDto request) {
         authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto request) {
-        return ResponseEntity.ok(authService.login(request));
+    public AuthResponseDto login(@Valid @RequestBody LoginRequestDto request) {
+        return authService.login(request);
     }
 }
