@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -40,5 +42,13 @@ public class UserService {
     private User findOrThrow(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserResponseDto> search(String q, Pageable pageable) {
+        String termo = q.trim();
+        return userRepository
+                .findByUsernameContainingIgnoreCaseOrDisplayNameContainingIgnoreCase(termo, termo, pageable)
+                .map(UserResponseDto::from);
     }
 }

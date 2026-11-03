@@ -90,4 +90,8 @@ public class UserController {
                          @PathVariable Long id) {
         followService.unfollow(principal.getUser().getId(), id);
     }
+    @GetMapping
+    public Page<UserResponseDto> search(@RequestParam String q, Pageable pageable) {
+        return userService.search(q, pageable);
+    }
 }

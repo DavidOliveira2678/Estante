@@ -9,8 +9,19 @@
 </template>
 
 <script setup>
+import { watch } from 'vue'
 import Navbar from './components/Navbar.vue'
 import Footer from './components/Footer.vue'
+import { useAutenticacaoStore } from './stores/autenticacaoStore'
+import { useLivroStore } from './stores/livroStore'
+
+const autenticacaoStore = useAutenticacaoStore()
+const livroStore = useLivroStore()
+
+watch(() => autenticacaoStore.isAuthenticated, (logado) => {
+  if (logado) livroStore.carregarEstante()
+  else livroStore.limparEstante()
+}, { immediate: true })
 </script>
 <style>
 .app-wrapper {

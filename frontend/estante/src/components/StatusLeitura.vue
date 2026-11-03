@@ -9,18 +9,27 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useLivroStore } from '../stores/livroStore'
+import { useAutenticacaoStore } from '../stores/autenticacaoStore'
 
 const props = defineProps({
-  livroId: {
-    type: Number,
-    required: true
-  }
+  livroId: { type: Number, required: true }
 })
+
+const router = useRouter()
 const livroStore = useLivroStore()
+const autenticacaoStore = useAutenticacaoStore()
+
 const statusSelecionado = computed({
   get: () => livroStore.getStatusLivro(props.livroId),
-  set: (novoValor) => livroStore.atualizarStatus(props.livroId, novoValor)
+  set: (novoValor) => {
+    if (!autenticacaoStore.isAuthenticated) {
+      router.push('/login')
+      return
+    }
+    livroStore.atualizarStatus(props.livroId, novoValor)
+  }
 })
 </script>
 

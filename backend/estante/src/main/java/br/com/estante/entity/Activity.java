@@ -27,7 +27,6 @@ public class Activity {
     private Long targetId;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
     private String payload;
 
     @Column(name = "created_at", nullable = false, updatable = false)

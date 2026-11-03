@@ -10,25 +10,31 @@
         @login="executeLogin" 
         @switchMode="goToCadastro" 
       />
+      <p v-if="erro" class="erro">{{ erro }}</p>.
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAutenticacaoStore } from '../stores/autenticacaoStore'
 import LoginForm from '../components/LoginForm.vue'
 
 const router = useRouter()
 const autenticacaoStore = useAutenticacaoStore()
+const erro = ref('')
 
-const executeLogin = (credentials) => {
-  autenticacaoStore.login(credentials)
-  router.push('/perfil')
+const executeLogin = async (credentials) => {
+  erro.value = ''
+  try {
+    await autenticacaoStore.login(credentials)
+    router.push('/perfil')
+  } catch (e) {
+    erro.value = e.response?.data?.message || 'Não foi possível entrar. Tente novamente.'
+  }
 }
-const goToCadastro = () => {
-  router.push('/cadastro') 
-}
+const goToCadastro = () => router.push('/cadastro')
 </script>
 <style scoped>
 .auth-page-container {

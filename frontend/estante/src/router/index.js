@@ -7,6 +7,7 @@ import LivrosSalvos from '../layouts/LivroSalvos.vue'
 import LivroDetalhes from '../layouts/LivroDetalhes.vue'
 import Social from '../layouts/Social.vue'
 import Perfil from '../layouts/Perfil.vue'
+import { useAutenticacaoStore } from '../stores/autenticacaoStore'
 
 const routes = [
   { path: '/', component: Home },
@@ -22,4 +23,10 @@ const routes = [
 export const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+router.beforeEach((to) => {
+  const protegidas = ['/estante', '/perfil', '/social']
+  const auth = useAutenticacaoStore()
+  if (protegidas.includes(to.path) && !auth.isAuthenticated) return '/login'
 })

@@ -38,17 +38,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAutenticacaoStore } from '../stores/autenticacaoStore'
 import defaultAvatar from '../assets/user_black.png'
 
 const router = useRouter()
 const autenticacaoStore = useAutenticacaoStore()
-const perfilEdit = ref({ ...autenticacaoStore.usuario })
-const salvarAlteracoes = () => {
-  autenticacaoStore.atualizarPerfil(perfilEdit.value)
-  alert('Perfil atualizado com sucesso!')
+const perfilEdit = ref({ nome: '', avatar: '', bio: '' })
+
+watch(() => autenticacaoStore.usuario, (u) => {
+  if (u) perfilEdit.value = { ...u }
+}, { immediate: true })
+
+const salvarAlteracoes = async () => {
+  try {
+    await autenticacaoStore.atualizarPerfil(perfilEdit.value)
+    alert('Perfil atualizado com sucesso!')
+  } catch (e) {
+    alert('Não foi possível salvar as alterações.')
+  }
 }
 const fazerLogout = () => {
   autenticacaoStore.logout()

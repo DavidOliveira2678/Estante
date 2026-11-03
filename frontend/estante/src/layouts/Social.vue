@@ -54,27 +54,33 @@
       </div>
     </div>
     <div v-else-if="activeTab === 'friends'" class="tab-content friends-section">
+      <p v-if="friends.length === 0" class="empty-state">
+        Você ainda não segue ninguém. Use a aba "Encontrar Usuários".
+      </p>
       <div class="user-grid">
         <div v-for="friend in friends" :key="friend.id" class="user-card">
-          <img :src="friend.avatar" alt="Avatar" class="avatar-large" />
+          <img :src="friend.avatar || defaultAvatar" alt="Avatar" class="avatar-large" />
           <h4>{{ friend.name }}</h4>
-          <span class="stats">{{ friend.booksRead }} livros lidos</span>
-          <button class="btn-remove" @click="removeFriend(friend.id)">Desfazer Amizade</button>
+          <span class="stats">@{{ friend.username }}</span>
+          <button class="btn-remove" @click="removeFriend(friend.id)">Deixar de seguir</button>
         </div>
       </div>
     </div>
     <div v-else-if="activeTab === 'discover'" class="tab-content discover-section">
       <div class="search-bar">
-        <input type="text" placeholder="Buscar por nome de usuário..." />
-        <button class="btn-search">Buscar</button>
+        <input type="text" placeholder="Buscar por nome ou usuário..." v-model="busca" @keyup.enter="pesquisar" />
+        <button class="btn-search" @click="pesquisar">Buscar</button>
       </div>
-
+      <p v-if="busca.trim().length >= 2 && suggestedUsers.length === 0" class="empty-state">
+        Nenhum usuário encontrado.
+      </p>
       <div class="user-grid">
         <div v-for="user in suggestedUsers" :key="user.id" class="user-card">
-          <img :src="user.avatar" alt="Avatar" class="avatar-large" />
+          <img :src="user.avatar || defaultAvatar" alt="Avatar" class="avatar-large" />
           <h4>{{ user.name }}</h4>
-          <span class="stats">{{ user.booksRead }} livros lidos</span>
-          <button class="btn-add" @click="addFriend(user)">Seguir</button>
+          <span class="stats">@{{ user.username }}</span>
+          <button v-if="!social.estaSeguindo(user.id)" class="btn-add" @click="addFriend(user)">Seguir</button>
+          <button v-else class="btn-remove" @click="removeFriend(user.id)">Deixar de seguir</button>
         </div>
       </div>
     </div>
@@ -83,63 +89,40 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import starIcon from '../assets/starIcon.png'
+import defaultAvatar from '../assets/user_black.png'
+import { useSocialStore } from '../stores/socialStore'
+import { useAutenticacaoStore } from '../stores/autenticacaoStore'
 
+const social = useSocialStore()
+const autenticacaoStore = useAutenticacaoStore()
 const activeTab = ref('feed')
-const activities = ref([
-  {
-    id: 1,
-    userName: 'David',
-    userAvatar: 'https://lesifpe.com.br/assets/imagens/membros/david.jpeg',
-    action: 'escreveu uma resenha para',
-    bookTitle: 'Clean Code',
-    bookCover: 'https://m.media-amazon.com/images/I/41xShlnTZTL._SY445_SX342_.jpg',
-    rating: 5,
-    review: 'Leitura obrigatória para qualquer desenvolvedor que queira escrever software sustentável. Mudou minha forma de programar!',
-    date: 'Há 2 horas'
-  },
-  {
-    id: 2,
-    userName: 'Ingrid',
-    userAvatar: 'https://lesifpe.com.br/assets/imagens/membros/ingrid.jpeg',
-    action: 'adicionou à estante (Quero Ler)',
-    bookTitle: 'Neuromancer',
-    bookCover: 'https://m.media-amazon.com/images/I/91NbsU4Gj8L._SY466_.jpg',
-    rating: 0,
-    review: null,
-    date: 'Há 5 horas'
-  },
-  {
-    id: 3,
-    userName: 'Montes',
-    userAvatar: 'https://lesifpe.com.br/assets/imagens/membros/victormontes.jpeg',
-    action: 'avaliou',
-    bookTitle: 'O Senhor dos Anéis',
-    bookCover: 'https://m.media-amazon.com/images/I/715e215DkSL._SY466_.jpg',
-    rating: 5,
-    review: null,
-    date: 'Ontem'
-  }
-])
-const friends = ref([
-  { id: 1, name: 'David', avatar: 'https://lesifpe.com.br/assets/imagens/membros/david.jpeg', booksRead: 42 },
-  { id: 2, name: 'Ingrid', avatar: 'https://lesifpe.com.br/assets/imagens/membros/ingrid.jpeg', booksRead: 15 },
-  { id: 3, name: 'Montes', avatar: 'https://lesifpe.com.br/assets/imagens/membros/victormontes.jpeg', booksRead: 8 }
-])
-const suggestedUsers = ref([
-  { id: 4, name: 'Raí', avatar: 'https://avatars.githubusercontent.com/u/202961793?s=130&v=4', booksRead: 23 },
-  { id: 5, name: 'Arthur', avatar: 'https://avatars.githubusercontent.com/u/74386209?s=130&v=4', booksRead: 31 }
-])
-const removeFriend = (id) => {
-  friends.value = friends.value.filter(f => f.id !== id)
-}
-const addFriend = (user) => {
-  if (!friends.value.find(f => f.id === user.id)) {
-    friends.value.push(user)
-    suggestedUsers.value = suggestedUsers.value.filter(u => u.id !== user.id)
+const busca = ref('')
+const activities = computed(() => social.feed)
+const friends = computed(() => social.friends)
+const suggestedUsers = computed(() => social.resultadosBusca)
+watch(() => autenticacaoStore.usuario?.id, (id) => {
+  if (id) social.carregarAmigos()
+}, { immediate: true })
+
+const executar = async (acao) => {
+  try {
+    await acao()
+  } catch (e) {
+    alert(e.response?.data?.message || 'Algo deu errado. Tente novamente.')
   }
 }
+const pesquisar = () => executar(() => social.buscarUsuarios(busca.value))
+const addFriend = (user) => executar(() => social.seguir(user))
+const removeFriend = (id) => executar(() => social.deixarDeSeguir(id))
+
+let timeout
+watch(busca, () => {
+  clearTimeout(timeout)
+  timeout = setTimeout(pesquisar, 500)
+})
+onBeforeUnmount(() => clearTimeout(timeout))
 </script>
 
 <style scoped>

@@ -22,7 +22,7 @@
       rows="4"
     ></textarea>
     
-    <button @click="submitReview" :disabled="!rating || !reviewText">
+    <button @click="submitReview" :disabled="!rating || !reviewText || enviando">
       Publicar Avaliação
     </button>
   </div>
@@ -32,21 +32,22 @@
 import { ref } from 'vue'
 import starIcon from '../assets/starIcon.png'
 
-const emit = defineEmits(['new-review'])
+const props = defineProps({
+  publicar: { type: Function, required: true }
+})
 const rating = ref(0)
 const hoverRating = ref(0)
 const reviewText = ref('')
+const enviando = ref(false)
 
-const submitReview = () => {
-  emit('new-review', {
-    id: Date.now(),
-    user: 'Você',
-    rating: rating.value,
-    text: reviewText.value,
-    date: new Date().toLocaleDateString()
-  })
-  rating.value = 0
-  reviewText.value = ''
+const submitReview = async () => {
+  enviando.value = true
+  const ok = await props.publicar({ rating: rating.value, text: reviewText.value })
+  enviando.value = false
+  if (ok) {
+    rating.value = 0
+    reviewText.value = ''
+  }
 }
 </script>
 

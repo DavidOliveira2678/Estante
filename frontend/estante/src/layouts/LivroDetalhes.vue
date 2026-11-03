@@ -28,56 +28,69 @@
     <hr class="divider" />
 
     <div class="resenhas-section">
-      <ResenhaForm @new-review="adicionarResenha" />
+      <ResenhaForm :publicar="adicionarResenha" />
       <ResenhaLista :reviews="resenhasDoLivro" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useLivroStore } from '../stores/livroStore'
 import { useReviewStore } from '../stores/resenhaStore'
 import { useSocialStore } from '../stores/socialStore'
+import { useAutenticacaoStore } from '../stores/autenticacaoStore'
 import StatusLeitura from '../components/StatusLeitura.vue'
 import ResenhaForm from '../components/ResenhaForm.vue'
 import ResenhaLista from '../components/ResenhaLista.vue'
 
 const route = useRoute()
+const router = useRouter()
 const livroStore = useLivroStore()
 const reviewStore = useReviewStore()
 const socialStore = useSocialStore()
+const autenticacaoStore = useAutenticacaoStore()
 const idDaUrl = Number(route.params.id)
+
+onMounted(() => {
+  livroStore.carregarLivro(idDaUrl)
+  reviewStore.carregarResenhas(idDaUrl)
+})
 const livroAtual = computed(() => {
   const livroEncontrado = livroStore.getLivroById(idDaUrl)
   return livroEncontrado || {
-    titulo: 'Livro não encontrado', 
-    autor: 'Desconhecido', 
-    sinopse: 'Não conseguimos localizar este livro no catálogo.', 
+    titulo: 'Livro não encontrado',
+    autor: 'Desconhecido',
+    sinopse: 'Não conseguimos localizar este livro no catálogo.',
     capa: 'https://via.placeholder.com/150x220/2a2a2a/ffffff?text=Erro'
   }
 })
-const resenhasDoLivro = computed(() => {
-  return reviewStore.getReviewsByLivroId(idDaUrl).value
-})
-const adicionarResenha = (novaResenha) => {
-  const resenhaFormatada = {
-    ...novaResenha,
-    avatar: ''
+
+const resenhasDoLivro = computed(() => reviewStore.getReviewsByLivroId(idDaUrl).value)
+const adicionarResenha = async ({ rating, text }) => {
+  if (!autenticacaoStore.isAuthenticated) {
+    router.push('/login')
+    return false
   }
-  reviewStore.addReview(idDaUrl, resenhaFormatada)
-  socialStore.addActivity({
-    id: Date.now(),
-    userName: novaResenha.user,
-    userAvatar: '',
-    action: 'escreveu uma resenha para',
-    bookTitle: livroAtual.value.titulo,
-    bookCover: livroAtual.value.capa,
-    rating: novaResenha.rating,
-    review: novaResenha.text,
-    date: 'Agora mesmo'
-  })
+  try {
+    await reviewStore.publicarResenha(idDaUrl, { rating, text })
+    socialStore.addActivity({
+      id: Date.now(),
+      userName: autenticacaoStore.usuario?.nome ?? 'Você',
+      userAvatar: autenticacaoStore.usuario?.avatar ?? '',
+      action: 'escreveu uma resenha para',
+      bookTitle: livroAtual.value.titulo,
+      bookCover: livroAtual.value.capa,
+      rating,
+      review: text,
+      date: 'Agora mesmo'
+    })
+    return true
+  } catch (e) {
+    alert(e.response?.data?.message || 'Não foi possível publicar a resenha.')
+    return false
+  }
 }
 </script>
 

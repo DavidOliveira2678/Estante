@@ -1,24 +1,57 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import api from '../services/api'
+
+const TOKEN_KEY = 'estante_token'
 
 export const useAutenticacaoStore = defineStore('autenticacaoStore', () => {
-  //simulando que o usuario iniciou a sessão 
-  const isAuthenticated = ref(true)
-  const usuario = ref({
-    id: 1,
-    nome: 'Victor Soares',
-    email: 'victor@estante.com',
-    avatar: '',
-    bio: 'Desenvolvedor de software e entusiasta de tecnologia e boas leituras.'
+  const token = ref(localStorage.getItem(TOKEN_KEY))
+  const usuario = ref(null)
+  const isAuthenticated = computed(() => !!token.value)
+
+  const mapUsuario = (u) => ({
+    id: u.id,
+    username: u.username,
+    nome: u.displayName,
+    avatar: u.avatarUrl,
+    bio: u.bio
   })
-  const login = (credentials) => {
-    isAuthenticated.value = true
-  }
+
   const logout = () => {
-    isAuthenticated.value = false
+    token.value = null
+    usuario.value = null
+    localStorage.removeItem(TOKEN_KEY)
   }
-  const atualizarPerfil = (novosDados) => {
-    usuario.value = { ...usuario.value, ...novosDados }
+
+  const carregarUsuario = async () => {
+    if (!token.value) return
+    try {
+      const { data } = await api.get('/api/me')
+      usuario.value = mapUsuario(data)
+    } catch (error) {
+      logout()
+    }
   }
-  return { isAuthenticated, usuario, login, logout, atualizarPerfil }
+
+  const login = async ({ email, password }) => {
+    const { data } = await api.post('/api/auth/login', { login: email, password })
+    token.value = data.token
+    localStorage.setItem(TOKEN_KEY, data.token)
+    await carregarUsuario()
+  }
+
+  const registrar = async ({ name, username, email, password }) => {
+    await api.post('/api/auth/register', {
+      username, email, password, displayName: name
+    })
+  }
+
+  const atualizarPerfil = async ({ nome, avatar, bio }) => {
+    const { data } = await api.put('/api/me', {
+      displayName: nome, avatarUrl: avatar, bio
+    })
+    usuario.value = mapUsuario(data)
+  }
+
+  return { token, usuario, isAuthenticated, login, registrar, carregarUsuario, atualizarPerfil, logout }
 })

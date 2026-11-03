@@ -10,21 +10,36 @@
         @register="executeRegistration" 
         @switchMode="goToLogin" 
       />
+      <p v-if="erro" class="erro">{{ erro }}</p>.
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAutenticacaoStore } from '../stores/autenticacaoStore'
 import RegisterForm from '../components/RegisterForm.vue'
+
 const router = useRouter()
-const executeRegistration = (userData) => {
-  console.log('Enviando para API de Cadastro:', userData)
-  //chamar axios e redirecionar
+const autenticacaoStore = useAutenticacaoStore()
+const erro = ref('')
+const executeRegistration = async (userData) => {
+  erro.value = ''
+  try {
+    await autenticacaoStore.registrar({
+      ...userData,
+      username: userData.username.replace(/^@/, '')
+    })
+    router.push('/login')
+  } catch (e) {
+    const dados = e.response?.data
+    erro.value = dados?.fields && Object.keys(dados.fields).length
+      ? Object.values(dados.fields).join(' ')
+      : dados?.message || 'Não foi possível criar a conta.'
+  }
 }
-const goToLogin = () => {
-  router.push('/login') 
-}
+const goToLogin = () => router.push('/login')
 </script>
 
 <style scoped>

@@ -18,6 +18,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.springframework.data.domain.PageImpl;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ public class BookService {
     private final BookRepository bookRepository;
     private final AuthorRepository authorRepository;
     private final GenreRepository genreRepository;
+    private final GoogleBooksService googleBooksService;
 
     @Transactional
     public BookResponseDto create(BookRequestDto request) {
@@ -51,14 +56,37 @@ public class BookService {
         return BookResponseDto.from(bookRepository.save(book));
     }
 
-    @Transactional(readOnly = true)
+        @Transactional
     public Page<BookResponseDto> search(String title, Pageable pageable) {
-        Page<Book> page = (title == null || title.isBlank())
-                ? bookRepository.findAll(pageable)
-                : bookRepository.findByTitleContainingIgnoreCase(title.trim(), pageable);
-        return page.map(BookResponseDto::from);
-    }
+        if (title == null || title.isBlank()) {
+            return bookRepository.findAll(pageable).map(BookResponseDto::from);
+        }
 
+        Map<Long, BookResponseDto> resultado = new LinkedHashMap<>();
+        for (Book externo : googleBooksService.searchBooks(title.trim())) {
+            Book livro = bookRepository
+                    .findByExternalIdAndExternalSource(externo.getExternalId(), externo.getExternalSource())
+                    .orElseGet(() -> {
+                        Set<Author> autores = new HashSet<>();
+                        for (Author a : externo.getAuthors()) {
+                            autores.add(authorRepository.findByExternalId(a.getExternalId())
+                                    .orElseGet(() -> authorRepository.save(a)));
+                        }
+                        externo.setAuthors(autores);
+                        return bookRepository.save(externo);
+                    });
+            resultado.putIfAbsent(livro.getId(), BookResponseDto.from(livro));
+        }
+
+        if (resultado.isEmpty()) {
+            return bookRepository.findByTitleContainingIgnoreCase(title.trim(), pageable)
+                    .map(BookResponseDto::from);
+        }
+
+        List<BookResponseDto> lista = new ArrayList<>(resultado.values());
+        return new PageImpl<>(lista, pageable, lista.size());
+    }
+    
     @Transactional(readOnly = true)
     public BookResponseDto findById(Long id) {
         return BookResponseDto.from(findOrThrow(id));

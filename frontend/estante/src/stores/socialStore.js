@@ -1,33 +1,68 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import api from '../services/api'
+import { useAutenticacaoStore } from './autenticacaoStore'
 
 export const useSocialStore = defineStore('socialStore', () => {
-  const friends = ref([
-    { id: 1, name: 'Mácio', avatar: 'https://i.pravatar.cc/150?u=macio', booksRead: 42 },
-    { id: 2, name: 'Pedro Gabriel', avatar: 'https://i.pravatar.cc/150?u=pedro', booksRead: 15 },
-    { id: 3, name: 'Gabriel Veríssimo', avatar: 'https://i.pravatar.cc/150?u=gabriel', booksRead: 8 }
-  ])
-  const suggestedUsers = ref([
-    { id: 4, name: 'Raí Miguel', avatar: 'https://i.pravatar.cc/150?u=rai', booksRead: 23 },
-    { id: 5, name: 'Vitor José', avatar: 'https://i.pravatar.cc/150?u=vitor', booksRead: 31 }
-  ])
-  const feed = ref([
-    { id: 1, userName: 'Mácio', userAvatar: 'https://i.pravatar.cc/150?u=macio', 
-        action: 'escreveu uma resenha para', bookTitle: 'Clean Code', 
-        bookCover: 'https://m.media-amazon.com/images/I/41xShlnTZTL._SY445_SX342_.jpg', rating: 5, 
-        review: 'Leitura obrigatória...', date: 'Há 2 horas' }
-  ])
-  const addFriend = (user) => {
-    if (!friends.value.find(f => f.id === user.id)) {
-      friends.value.push(user)
-      suggestedUsers.value = suggestedUsers.value.filter(u => u.id !== user.id)
+  const friends = ref([])
+  const resultadosBusca = ref([])
+  const feed = ref([])
+
+  const mapUsuario = (u) => ({
+    id: u.id,
+    name: u.displayName || u.username,
+    username: u.username,
+    avatar: u.avatarUrl || ''
+  })
+
+  const carregarAmigos = async () => {
+    const auth = useAutenticacaoStore()
+    if (!auth.usuario) return
+    try {
+      const { data } = await api.get(`/api/users/${auth.usuario.id}/following`, {
+        params: { size: 100 }
+      })
+      friends.value = await Promise.all(
+        data.content.map(async (f) => {
+          const { data: u } = await api.get(`/api/users/${f.followingId}`)
+          return mapUsuario(u)
+        })
+      )
+    } catch (error) {
+      console.error('Erro ao carregar amigos:', error)
     }
   }
-  const removeFriend = (id) => {
+
+  const buscarUsuarios = async (q) => {
+    const termo = q.trim()
+    if (termo.length < 2) {
+      resultadosBusca.value = []
+      return
+    }
+    const auth = useAutenticacaoStore()
+    const { data } = await api.get('/api/users', { params: { q: termo, size: 12 } })
+    resultadosBusca.value = data.content
+      .filter(u => u.id !== auth.usuario?.id)
+      .map(mapUsuario)
+  }
+
+  const estaSeguindo = (id) => friends.value.some(f => f.id === id)
+  const seguir = async (user) => {
+    await api.post(`/api/users/${user.id}/follow`)
+    if (!estaSeguindo(user.id)) friends.value.push(user)
+  }
+
+  const deixarDeSeguir = async (id) => {
+    await api.delete(`/api/users/${id}/follow`)
     friends.value = friends.value.filter(f => f.id !== id)
   }
+
   const addActivity = (activity) => {
     feed.value.unshift(activity)
   }
-  return { friends, suggestedUsers, feed, addFriend, removeFriend, addActivity }
+
+  return {
+    friends, resultadosBusca, feed,
+    carregarAmigos, buscarUsuarios, estaSeguindo, seguir, deixarDeSeguir, addActivity
+  }
 })

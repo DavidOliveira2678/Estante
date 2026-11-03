@@ -18,13 +18,31 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useLivroStore } from '../stores/livroStore'
 import LivroCard from '../components/LivroCard.vue'
 
 const livroStore = useLivroStore()
 const searchQuery = ref('')
 const livrosDisponiveis = computed(() => livroStore.catalogo)
+
+onMounted(() => {
+  livroStore.buscarLivros()
+})
+
+let timeout
+watch(searchQuery, (novoValor) => {
+  clearTimeout(timeout)
+  const termo = novoValor.trim()
+
+  if (termo.length > 0 && termo.length < 3) return
+
+  timeout = setTimeout(() => {
+    livroStore.buscarLivros(termo)
+  }, 600)
+})
+
+onBeforeUnmount(() => clearTimeout(timeout))
 </script>
 
 <style scoped>
