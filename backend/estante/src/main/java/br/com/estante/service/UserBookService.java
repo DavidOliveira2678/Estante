@@ -5,15 +5,17 @@ import br.com.estante.dto.UserBookResponseDto;
 import br.com.estante.dto.UserBookUpdateRequestDto;
 import br.com.estante.entity.Book;
 import br.com.estante.entity.UserBook;
+import br.com.estante.entity.enums.ActivityType;
 import br.com.estante.entity.enums.ReadingStatus;
+import br.com.estante.event.AtividadeEvent;
 import br.com.estante.repository.BookRepository;
 import br.com.estante.repository.UserBookRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import br.com.estante.entity.enums.ActivityType;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,7 +26,7 @@ public class UserBookService {
 
     private final UserBookRepository userBookRepository;
     private final BookRepository bookRepository;
-    private final FeedService feedService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public UserBookResponseDto add(Long userId, UserBookRequestDto request) {
@@ -39,7 +41,7 @@ public class UserBookService {
         apply(userBook, book, request.status(), request.currentPage(), request.startedAt(), request.finishedAt());
         UserBook salvo = userBookRepository.save(userBook);
         if (request.status() == ReadingStatus.READ) {
-            feedService.registrarAtividade(userId, ActivityType.BOOK_FINISHED, request.bookId());
+            eventPublisher.publishEvent(new AtividadeEvent(userId, ActivityType.BOOK_FINISHED, request.bookId()));
         }
         return UserBookResponseDto.from(salvo);
     }
@@ -52,7 +54,7 @@ public class UserBookService {
         apply(userBook, book, request.status(), request.currentPage(), request.startedAt(), request.finishedAt());
         UserBook salvo = userBookRepository.save(userBook);
         if (request.status() == ReadingStatus.READ && anterior != ReadingStatus.READ) {
-            feedService.registrarAtividade(userId, ActivityType.BOOK_FINISHED, bookId);
+            eventPublisher.publishEvent(new AtividadeEvent(userId, ActivityType.BOOK_FINISHED, bookId));
         }
         return UserBookResponseDto.from(salvo);
     }
