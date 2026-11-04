@@ -57,12 +57,29 @@ export const useSocialStore = defineStore('socialStore', () => {
     friends.value = friends.value.filter(f => f.id !== id)
   }
 
-  const addActivity = (activity) => {
-    feed.value.unshift(activity)
+  const mapAtividade = (a) => ({
+  id: a.id,
+  userName: a.actor.displayName || a.actor.username,
+  userAvatar: a.actor.avatarUrl || '',
+  action: a.type === 'BOOK_FINISHED' ? 'terminou de ler' : 'escreveu uma resenha para',
+  bookTitle: a.book.title,
+  bookCover: a.book.coverUrl,
+  rating: a.rating ? Math.round(a.rating / 2) : 0, // backend 1-10 -> tela 1-5
+  review: a.text || null,
+  date: new Date(a.createdAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+})
+
+const carregarFeed = async () => {
+  try {
+    const { data } = await api.get('/api/feed', { params: { size: 20 } })
+    feed.value = data.content.filter(a => a.book).map(mapAtividade)
+  } catch (error) {
+    console.error('Erro ao carregar o feed:', error)
   }
+}
 
   return {
     friends, resultadosBusca, feed,
-    carregarAmigos, buscarUsuarios, estaSeguindo, seguir, deixarDeSeguir, addActivity
+    carregarAmigos, buscarUsuarios, estaSeguindo, seguir, deixarDeSeguir, carregarFeed
   }
 })

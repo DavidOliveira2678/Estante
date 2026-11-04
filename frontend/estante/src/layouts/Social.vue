@@ -89,7 +89,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import starIcon from '../assets/starIcon.png'
 import defaultAvatar from '../assets/user_black.png'
 import { useSocialStore } from '../stores/socialStore'
@@ -102,9 +102,16 @@ const busca = ref('')
 const activities = computed(() => social.feed)
 const friends = computed(() => social.friends)
 const suggestedUsers = computed(() => social.resultadosBusca)
+
 watch(() => autenticacaoStore.usuario?.id, (id) => {
   if (id) social.carregarAmigos()
 }, { immediate: true })
+
+onMounted(() => social.carregarFeed())
+
+watch(activeTab, (aba) => {
+  if (aba === 'feed') social.carregarFeed()
+})
 
 const executar = async (acao) => {
   try {

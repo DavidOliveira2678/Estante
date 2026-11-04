@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import br.com.estante.entity.enums.ActivityType;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,6 +24,7 @@ public class UserBookService {
 
     private final UserBookRepository userBookRepository;
     private final BookRepository bookRepository;
+    private final FeedService feedService;
 
     @Transactional
     public UserBookResponseDto add(Long userId, UserBookRequestDto request) {
@@ -35,15 +37,24 @@ public class UserBookService {
                 .bookId(request.bookId())
                 .build();
         apply(userBook, book, request.status(), request.currentPage(), request.startedAt(), request.finishedAt());
-        return UserBookResponseDto.from(userBookRepository.save(userBook));
+        UserBook salvo = userBookRepository.save(userBook);
+        if (request.status() == ReadingStatus.READ) {
+            feedService.registrarAtividade(userId, ActivityType.BOOK_FINISHED, request.bookId());
+        }
+        return UserBookResponseDto.from(salvo);
     }
 
     @Transactional
     public UserBookResponseDto update(Long userId, Long bookId, UserBookUpdateRequestDto request) {
         UserBook userBook = findOrThrow(userId, bookId);
+        ReadingStatus anterior = userBook.getStatus();
         Book book = findBook(bookId);
         apply(userBook, book, request.status(), request.currentPage(), request.startedAt(), request.finishedAt());
-        return UserBookResponseDto.from(userBookRepository.save(userBook));
+        UserBook salvo = userBookRepository.save(userBook);
+        if (request.status() == ReadingStatus.READ && anterior != ReadingStatus.READ) {
+            feedService.registrarAtividade(userId, ActivityType.BOOK_FINISHED, bookId);
+        }
+        return UserBookResponseDto.from(salvo);
     }
 
     @Transactional(readOnly = true)

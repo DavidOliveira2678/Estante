@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import br.com.estante.entity.enums.ActivityType;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +26,7 @@ public class ReviewService {
     private final ReviewCommentRepository reviewCommentRepository;
     private final BookRepository bookRepository;
     private final BookRatingStatsService statsService;
+    private final FeedService feedService;
 
     @Transactional
     public ReviewResponseDto create(Long userId, ReviewRequestDto request) {
@@ -43,6 +45,7 @@ public class ReviewService {
                 .build();
         review = reviewRepository.save(review);
         statsService.addRating(review.getBookId(), review.getRating());
+        feedService.registrarAtividade(userId, ActivityType.REVIEW_PUBLISHED, review.getId());
         return ReviewResponseDto.from(review);
     }
 

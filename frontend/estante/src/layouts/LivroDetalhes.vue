@@ -39,7 +39,6 @@ import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useLivroStore } from '../stores/livroStore'
 import { useReviewStore } from '../stores/resenhaStore'
-import { useSocialStore } from '../stores/socialStore'
 import { useAutenticacaoStore } from '../stores/autenticacaoStore'
 import StatusLeitura from '../components/StatusLeitura.vue'
 import ResenhaForm from '../components/ResenhaForm.vue'
@@ -49,7 +48,6 @@ const route = useRoute()
 const router = useRouter()
 const livroStore = useLivroStore()
 const reviewStore = useReviewStore()
-const socialStore = useSocialStore()
 const autenticacaoStore = useAutenticacaoStore()
 const idDaUrl = Number(route.params.id)
 
@@ -68,6 +66,7 @@ const livroAtual = computed(() => {
 })
 
 const resenhasDoLivro = computed(() => reviewStore.getReviewsByLivroId(idDaUrl).value)
+
 const adicionarResenha = async ({ rating, text }) => {
   if (!autenticacaoStore.isAuthenticated) {
     router.push('/login')
@@ -75,17 +74,6 @@ const adicionarResenha = async ({ rating, text }) => {
   }
   try {
     await reviewStore.publicarResenha(idDaUrl, { rating, text })
-    socialStore.addActivity({
-      id: Date.now(),
-      userName: autenticacaoStore.usuario?.nome ?? 'Você',
-      userAvatar: autenticacaoStore.usuario?.avatar ?? '',
-      action: 'escreveu uma resenha para',
-      bookTitle: livroAtual.value.titulo,
-      bookCover: livroAtual.value.capa,
-      rating,
-      review: text,
-      date: 'Agora mesmo'
-    })
     return true
   } catch (e) {
     alert(e.response?.data?.message || 'Não foi possível publicar a resenha.')
